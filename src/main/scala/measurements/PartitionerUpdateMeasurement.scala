@@ -30,7 +30,7 @@ object PartitionerUpdateMeasurement {
 
     val recordGenerator = new StringKeyedRecordGenerator
 
-    def createPartitioner: Updateable[_] = {
+    def createPartitioner: Updateable = {
       partitionerName match {
         case "Scan" | "Redist" | "Readj" =>
           val betaS: Double => Double = x => x
@@ -71,7 +71,7 @@ object PartitionerUpdateMeasurement {
       }
     }
 
-    def getPartitionHistogram(part: Updateable[_], keyHistogram: Seq[(Any, Double)]): Map[Int, Double] = {
+    def getPartitionHistogram(part: Updateable, keyHistogram: Seq[(Any, Double)]): Map[Int, Double] = {
       var partitionHistogram = (0 until numPartitions).map(p => p -> 0.0d).toMap
       keyHistogram.foreach({ case (k, v) =>
         val partition = part.getPartition(k)
@@ -83,7 +83,7 @@ object PartitionerUpdateMeasurement {
     // update without key shuffling
     val block1: CodeBlock = new CodeBlock {
       var partitioningInfo: PartitioningInfo = _
-      var partitioner: Updateable[_] = _
+      var partitioner: Updateable = _
       var keys: Array[Any] = _
       var keyHistogram: Seq[(Any, Double)] = _
       var partitionHistogram: Map[Int, Double] = _
@@ -113,7 +113,7 @@ object PartitionerUpdateMeasurement {
 
       // code to be measured
       override def compute(): Any = {
-        partitioner = partitioner.update(partitioningInfo).asInstanceOf[Updateable[_]]
+        partitioner = partitioner.update(partitioningInfo)
         partitioner
       }
     }
@@ -121,7 +121,7 @@ object PartitionerUpdateMeasurement {
     // update with key shuffling
     val block2: CodeBlock = new CodeBlock {
       var partitioningInfo: PartitioningInfo = _
-      var partitioner: Updateable[_] = _
+      var partitioner: Updateable = _
       var keys: Array[Any] = _
       var keyHistogram: Seq[(Any, Double)] = _
       var partitionHistogram: Map[Int, Double] = _
@@ -157,7 +157,7 @@ object PartitionerUpdateMeasurement {
       }
 
       override def compute(): Any = {
-        partitioner = partitioner.update(partitioningInfo).asInstanceOf[Updateable[_]]
+        partitioner = partitioner.update(partitioningInfo)
         partitioner
       }
     }

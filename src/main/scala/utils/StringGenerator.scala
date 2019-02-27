@@ -7,10 +7,10 @@ object StringGenerator {
   val hash: Int => Int =
     (key: Int) => MurmurHash3.stringHash((key.hashCode + 123456791).toString)
 
-  def hash(key: Any, seed: Int) = MurmurHash3.stringHash((key.hashCode + seed).toString)
+  def hash(key: Any, seed: Int): Int = MurmurHash3.stringHash((key.hashCode + seed).toString)
 
   val idLength: Int = 10
-  val alphNumList = ((48 to 57) ++ (65 to 90) ++ (95 to 95) ++ (97 to 122)).map(_.toChar)
+  val alphNumList: Seq[Char] = ((48 to 57) ++ (65 to 90) ++ (95 to 95) ++ (97 to 122)).map(_.toChar)
 
   def generateId(): String = {
     (1 to idLength).map(_ => {

@@ -116,7 +116,8 @@ object PartitioningBalanceMeasurement {
       val metric = avg
       print(s"$metric ")
     }
-      measureBalance(Distribution.zeta(exponent, shift, numKeys).probabilities, numPartitions)
+
+    measureBalance(Distribution.zeta(exponent, shift, numKeys).probabilities, numPartitions)
   }
 
   def transformKey(k: Int, seed: Int): String = StringGenerator.generateRandomString(k) + seed.toString

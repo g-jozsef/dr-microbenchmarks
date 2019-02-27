@@ -109,6 +109,9 @@ class ConsistentHashPartitioner private(
   def printHashRing(): Unit = {
     println("Hash ring: " + hashRing.mkString("[", ", ", "]"))
   }
+
+  override def toString: String = s"ConsistentHashPartitioner($id)"
+
 }
 
 object ConsistentHashPartitioner {

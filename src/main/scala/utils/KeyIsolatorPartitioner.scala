@@ -5,12 +5,12 @@ import utils.KeyIsolatorPartitioner._
 import scala.collection.immutable.{HashMap, TreeSet}
 
 class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] private(
-  val numPartitions: Int,
+  override val numPartitions: Int,
   val heavyKeysMap: Map[Any, Int] = Map[Any, Int](),
   val internalPartitioner: Partitioner,
   val migrationCostEstimation: Option[(Double, Double)] = None,
   val initializeInternalPartitioner: (PartitioningInfo, Array[Double]) => T)
-  extends Updateable[KeyIsolatorPartitioner[T]] with MigrationCostEstimator {
+  extends Updateable with MigrationCostEstimator {
 
   def this(
     numPartitions: Int,
@@ -124,9 +124,9 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
     val normalizationFactor: Double = unnormalizedWeighting.sum
     val weighting: Array[Double] = unnormalizedWeighting.map(_ / normalizationFactor)
 
-    //updating consistent hash partitioner
+    // updating consistent hash partitioner
     val consistentHashPartitioner: T = internalPartitioner match {
-      case p: Partitioner with Adaptive[T] =>
+      case p: Adaptive[T] =>
         p.adapt(partitioningInfo, weighting)
       case _ => initializeInternalPartitioner(partitioningInfo, weighting)
     }
@@ -151,6 +151,9 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
       migrationCostEstimation,
       initializeInternalPartitioner)
   }
+
+  override def toString: String = s"KeyIsolatorPartitioner($id)"
+
 }
 
 object KeyIsolatorPartitioner {

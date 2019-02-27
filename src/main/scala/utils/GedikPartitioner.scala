@@ -73,6 +73,8 @@ object GedikPartitioner {
       }
     }
 
+    override def toString: String = s"ConsistentHasher($id)"
+
   }
 
   def indicator(b: Boolean): Int = if (b) 1 else 0
@@ -89,7 +91,7 @@ object GedikPartitioner {
     prevFreqsSorted: Seq[(Any, Double)] = Seq(),
     prevP: Option[Partitioner] = None,
     algorithm: String)
-    extends Updateable[GedikPartitioner] {
+    extends Updateable {
 
     def this(partitions: Int,
       numReplicasConsistentHash: Int,
@@ -141,6 +143,8 @@ object GedikPartitioner {
         prevFreqsSorted = currFreqsSorted,
         prevP = Some(this), algorithm)
     }
+
+    override def toString: String = s"GedikPartitioner($algorithm, $id)"
 
   }
 

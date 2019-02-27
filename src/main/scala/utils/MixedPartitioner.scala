@@ -4,17 +4,11 @@ import utils.AdvancedBinarySearch._
 import utils.MixedPartitioner._
 
 class MixedPartitioner(
-  val numPartitions: Int,
+  override val numPartitions: Int,
   val aMax: Int,
   val thetaMax: Double,
   val routingTable: Map[Any, Int],
-  val consistentHasher: ConsistentHashPartitioner) extends Updateable[MixedPartitioner] {
-
-  //	def this(numPartitions: Int, aMax: Int, thetaMax: Double,
-  //		consistentHasher: ConsistentHashPartitioner) = {
-  //		this(numPartitions, aMax, thetaMax, Map[Any, Int](),
-  //			consistentHasher, createPartitionsToKeysMap(consistentHasher))
-  //	}
+  val consistentHasher: ConsistentHashPartitioner) extends Updateable {
 
   def this(numPartitions: Int, aMax: Int, thetaMax: Double) = {
     this(numPartitions, aMax, thetaMax, Map[Any, Int](),
@@ -171,6 +165,9 @@ class MixedPartitioner(
 
     new MixedPartitioner(numPartitions, aMax, thetaMax, newRoutingTable, consistentHasher)
   }
+
+  override def toString: String = s"MixedPartitioner($id)"
+
 }
 
 object MixedPartitioner {
@@ -178,9 +175,4 @@ object MixedPartitioner {
   val beta = 1.5
   val maxThetaIterations = 1000
   val maxAIterations = 1000
-
-  //	def createPartitionsToKeysMap(consistentHasher: ConsistentHashPartitioner): Unit = {
-  //		val numPartitions = consistentHasher.numPartitions
-  //
-  //	}
 }

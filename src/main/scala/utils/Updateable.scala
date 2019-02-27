@@ -1,7 +1,7 @@
 package utils
 
-trait Updateable[P <: Updateable[P]] extends Partitioner {
+trait Updateable extends Partitioner {
 
-  def update(partitioningInfo: PartitioningInfo): P
+  def update(partitioningInfo: PartitioningInfo): Updateable
 
 }

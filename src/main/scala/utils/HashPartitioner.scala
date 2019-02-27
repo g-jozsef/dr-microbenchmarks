@@ -9,13 +9,14 @@ class HashPartitioner(override val numPartitions: Int) extends Partitioner {
       val rawMod = key.hashCode % numPartitions
       rawMod + (if (rawMod < 0) numPartitions else 0)
   }
-}
 
-// override def equals(other: Any): Boolean = other match {
-//		case h: HashPartitioner =>
-//			h.numPartitions == numPartitions
-//		case _ =>
-//			false
-//	}
-//
-//	override def hashCode: Int = numPartitions
+  override def hashCode(): Int = numPartitions
+
+  override def equals(other: Any): Boolean = other match {
+    case h: HashPartitioner => h.numPartitions == numPartitions
+    case _ => false
+  }
+
+  override def toString: String = s"HashPartitioner($numPartitions)"
+
+}

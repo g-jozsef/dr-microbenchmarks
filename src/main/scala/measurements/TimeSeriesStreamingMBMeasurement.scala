@@ -63,7 +63,7 @@ object TimeSeriesStreamingMBMeasurement {
     val stateSizes = (1 - stateWindow until numBatches - stateWindow + 1 by 1).map(i => keyDistributionsMap.slice(i, i + stateWindow)).map(g =>
       g.foldLeft(Map[Any, Double]())((map1, map2) => mergeMaps(map1, map2)).mapValues(_ / stateWindow))
 
-    def createNewPartitioner(): Updateable[_] = {
+    def createNewPartitioner(): Updateable = {
       partitionerName match {
         case "Scan" | "Redist" | "Readj" =>
           val betaS: Double => Double = x => x
@@ -140,7 +140,7 @@ object TimeSeriesStreamingMBMeasurement {
         partitioner2 = partitionerName match {
           case "Hash" => partitioner2
           case _ => partitioner2 match {
-            case p: Updateable[_] =>
+            case p: Updateable =>
               p.update(partitioningInfo).asInstanceOf[Partitioner]
             case _ => createNewPartitioner().update(partitioningInfo).asInstanceOf[Partitioner]
           }

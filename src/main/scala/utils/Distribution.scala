@@ -2,10 +2,8 @@ package utils
 
 import scala.util.Random
 
-/**
-  * Created by szape on 2016.01.18..
-  */
 class Distribution(val probabilities: Array[Double]) extends Serializable {
+
   import Distribution._
 
   val width = probabilities.length

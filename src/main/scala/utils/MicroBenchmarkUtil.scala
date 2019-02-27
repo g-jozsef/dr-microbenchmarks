@@ -7,26 +7,6 @@ object MicroBenchmarkUtil {
   private val warmupFactor = 0.3d
   private val headCut = 0.5d
 
-  //	def main(args: Array[String]): Unit = {
-  //		def block: Any = {
-  //			var seq: Seq[Double] = Seq[Double]()
-  //			for (i: Int <- 0 to 100) {
-  //				seq = seq :+ Random.nextDouble()
-  //			}
-  //			seq(5)
-  //		}
-  //
-  //		System.gc()
-  //
-  //		println("Warm-up phase " + measure(block, 1000).sum / 1000)
-  //
-  //		System.gc()
-  //
-  //		println("Timing phase " + measure(block, 10000).sum / 10000)
-  //
-  //		System.gc()
-  //	}
-
   def measureQuantiles(block: CodeBlock, iterations: Int, quantiles: Double*): Array[Double] = {
     val measurements = measure(block, iterations)
     val size = measurements.size
