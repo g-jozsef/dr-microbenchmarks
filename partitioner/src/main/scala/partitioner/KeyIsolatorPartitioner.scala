@@ -3,23 +3,23 @@ package partitioner
 import scala.collection.immutable.{HashMap, TreeSet}
 import KeyIsolatorPartitioner._
 
-class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] private(
+class KeyIsolatorPartitioner[P <: Adaptive[P, T] with MigrationCostEstimator, T] private(
   override val numPartitions: Int,
-  val heavyKeysMap: Map[Any, Int] = Map[Any, Int](),
-  val internalPartitioner: Partitioner,
+  val heavyKeysMap: Map[T, Int] = Map[T, Int](),
+  val internalPartitioner: Partitioner[T],
   val migrationCostEstimation: Option[(Double, Double)] = None,
-  val initializeInternalPartitioner: (PartitioningInfo, Array[Double]) => T)
-  extends Updateable with MigrationCostEstimator {
+  val initializeInternalPartitioner: (PartitioningInfo[T], Array[Double]) => P)
+  extends Updateable[T] with MigrationCostEstimator {
 
   def this(
     numPartitions: Int,
-    initializeInternalPartitioner: (PartitioningInfo, Array[Double]) => T) = {
+    initializeInternalPartitioner: (PartitioningInfo[T], Array[Double]) => P) = {
     this(numPartitions,
-      internalPartitioner = new HashPartitioner(numPartitions),
+      internalPartitioner = new HashPartitioner[T](numPartitions),
       initializeInternalPartitioner = initializeInternalPartitioner)
   }
 
-  override def getPartition(key: Any): Int = {
+  override def getPartition(key: T): Int = {
     heavyKeysMap.get(key) match {
       case Some(part) => part
       case None =>
@@ -33,7 +33,7 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
   def getInternalMigrationCostEstimation: Option[Double] =
     migrationCostEstimation.map({ case (hm, sm) => sm })
 
-  override def update(partitioningInfo: PartitioningInfo): KeyIsolatorPartitioner[T] = {
+  override def update(partitioningInfo: PartitioningInfo[T]): KeyIsolatorPartitioner[P, T] = {
 
     implicit val ordering: Ordering[(Int, Double)] = new Ordering[(Int, Double)] {
       override def compare(x: (Int, Double), y: (Int, Double)): Int = {
@@ -51,10 +51,10 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
     val numHeavyKeys = Math.min((numPartitions * keyExcess).round.toInt, partitioningInfo.heavyKeys.size)
     // ordered by frequency
     val heavyKeysWithFrequencies = partitioningInfo.heavyKeys.take(numHeavyKeys)
-    val heavyKeyToFrequencyMap: Map[Any, Double] = heavyKeysWithFrequencies.toMap
+    val heavyKeyToFrequencyMap: Map[T, Double] = heavyKeysWithFrequencies.toMap
     val allowedLevel = Math.max(heavyKeysWithFrequencies.head._2, 1.0d / numPartitions) +
       allowedBalanceError
-    var explicitHash = Map[Any, Int]()
+    var explicitHash = Map[T, Int]()
 
     var partitionSizes: TreeSet[(Int, Double)] = new TreeSet[(Int, Double)]()
     var partitionToSizeMap = new HashMap[Int, Double]
@@ -62,10 +62,10 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
       partitionSizes += ((p, 0.0d))
       partitionToSizeMap += (p -> 0.0d)
     })
-    var heavyKeysToMigrate: Seq[Any] = Seq[Any]()
+    var heavyKeysToMigrate: Seq[T] = Seq[T]()
     var currentMigration: Double = 0.0d
 
-    def updateBookkeep(k: Any, p: Int, newPartitionSize: Double): Unit = {
+    def updateBookkeep(k: T, p: Int, newPartitionSize: Double): Unit = {
       explicitHash += (k -> p)
       partitionSizes -= ((p, partitionToSizeMap(p)))
       partitionSizes += ((p, newPartitionSize))
@@ -124,8 +124,8 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
     val weighting: Array[Double] = unnormalizedWeighting.map(_ / normalizationFactor)
 
     // updating consistent hash partitioner
-    val consistentHashPartitioner: T = internalPartitioner match {
-      case p: Adaptive[T] =>
+    val consistentHashPartitioner: P = internalPartitioner match {
+      case p: Adaptive[P, T] =>
         p.adapt(partitioningInfo, weighting)
       case _ => initializeInternalPartitioner(partitioningInfo, weighting)
     }
@@ -150,8 +150,6 @@ class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] priva
       migrationCostEstimation,
       initializeInternalPartitioner)
   }
-
-  override def toString: String = s"KeyIsolatorPartitioner($id)"
 
 }
 

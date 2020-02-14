@@ -2,13 +2,13 @@ package partitioner
 
 import scala.util.hashing.MurmurHash3
 
-class ConsistentHashPartitioner private(
+class ConsistentHashPartitioner[T] private(
   override val numPartitions: Int,
   val replicationFactor: Int,
   val weighting: Array[Double],
   val hashRing: Array[Int],
   val migrationCostEstimation: Option[Double],
-  hashFunction: Any => Double) extends Adaptive[ConsistentHashPartitioner] with MigrationCostEstimator {
+  hashFunction: Any => Double) extends Adaptive[ConsistentHashPartitioner[T], T] with MigrationCostEstimator {
 
   // TODO construct with numReplicas instead of replicationFactor
   private def this(
@@ -39,15 +39,15 @@ class ConsistentHashPartitioner private(
 
   private val numPackages = numPartitions * replicationFactor
 
-  override def getPartition(key: Any): Int = {
+  override def getPartition(key: T): Int = {
     hashRing(Math.floor(hashFunction(key) * numPackages).toInt % numPackages)
   }
 
   override def getMigrationCostEstimation: Option[Double] = migrationCostEstimation
 
   override def adapt(
-    partitioningInfo: PartitioningInfo,
-    newWeighting: Array[Double]): ConsistentHashPartitioner = {
+    partitioningInfo: PartitioningInfo[T],
+    newWeighting: Array[Double]): ConsistentHashPartitioner[T] = {
     val newHashRing: Array[Int] = new Array[Int](numPackages)
 
     val transfer: Array[Int] = weighting.zip(newWeighting).map(p => p._2 - p._1)
@@ -109,8 +109,6 @@ class ConsistentHashPartitioner private(
   def printHashRing(): Unit = {
     println("Hash ring: " + hashRing.mkString("[", ", ", "]"))
   }
-
-  override def toString: String = s"ConsistentHashPartitioner($id)"
 
 }
 

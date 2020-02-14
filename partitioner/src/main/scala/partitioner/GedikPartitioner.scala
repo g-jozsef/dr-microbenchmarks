@@ -27,7 +27,7 @@ object GedikPartitioner {
       Distribution.twoStep(numPartitions.toDouble / 2.0d, numPartitions).probabilities
 
     val consistentHasher =
-      new ConsistentHasher[Int](numPartitions, _.hashCode(), numReplicas)
+      new ConsistentHasher[String, Int](numPartitions, _.hashCode(), numReplicas)
 
     val initHasher: String => Int = consistentHasher.getPartition
 
@@ -41,11 +41,11 @@ object GedikPartitioner {
 
   }
 
-  class ConsistentHasher[HashCode](partitions: Int,
+  class ConsistentHasher[T, HashCode](partitions: Int,
     hashFunc: Any => HashCode,
     numReplicas: Int)
     (implicit ord: Ordering[HashCode])
-    extends Partitioner {
+    extends Partitioner[T] {
 
     override def numPartitions: Int = partitions
 
@@ -55,6 +55,7 @@ object GedikPartitioner {
         replica <- 0 until numReplicas
       } yield {
         // TODO better way to combine partition with replica?
+        // Probaly
         hashFunc((partition, replica)) -> partition
       }
 
@@ -63,7 +64,7 @@ object GedikPartitioner {
     private val jLookupMap: java.util.TreeMap[HashCode, Int] =
       new java.util.TreeMap(mapAsJavaMap(lookupMap))
 
-    override def getPartition(key: Any): Int = {
+    override def getPartition(key: T): Int = {
       // TODO this lookup should be more efficient, maybe use Java TreeMap or TreeSet?
       // val partitionOld = lookupMap.valuesIteratorFrom(hashFunc(key)).toIterable.headOption
       val entry = jLookupMap.ceilingEntry(hashFunc(key))
@@ -74,25 +75,23 @@ object GedikPartitioner {
       }
     }
 
-    override def toString: String = s"ConsistentHasher($id)"
-
   }
 
   def indicator(b: Boolean): Int = if (b) 1 else 0
 
-  class GedikPartitioner(partitions: Int,
-    consistentHash: Partitioner,
+  class GedikPartitioner[T](partitions: Int,
+    consistentHash: Partitioner[T],
     betaS: Double => Double,
     betaC: Double => Double,
     thetaS: Double,
     thetaC: Double,
     thetaN: Double,
     utility: (Double, Double) => Double,
-    currFreqsSorted: Seq[(Any, Double)] = Seq(),
-    prevFreqsSorted: Seq[(Any, Double)] = Seq(),
-    prevP: Option[Partitioner] = None,
+    currFreqsSorted: Seq[(T, Double)] = Seq(),
+    prevFreqsSorted: Seq[(T, Double)] = Seq(),
+    prevP: Option[Partitioner[T]] = None,
     algorithm: String)
-    extends Updateable {
+    extends Updateable[T] {
 
     def this(partitions: Int,
       numReplicasConsistentHash: Int,
@@ -105,28 +104,28 @@ object GedikPartitioner {
       utility: (Double, Double) => Double,
       algorithm: String) {
       this(partitions,
-        new ConsistentHasher[Int](partitions, hashFunc, numReplicasConsistentHash),
+        new ConsistentHasher[T, Int](partitions, hashFunc, numReplicasConsistentHash),
         betaS, betaC, thetaS, thetaC, thetaN, utility, Seq(), Seq(), None, algorithm)
     }
 
     override def numPartitions: Int = partitions
 
-    private val prevPartitioner: Any => Int =
+    private val prevPartitioner: T => Int =
       prevP match {
         case Some(p) => p.getPartition
         case None => consistentHash.getPartition
       }
 
-    private val partitionerConstructor: (Int, Partitioner, Seq[(Any, Double)],
-      Seq[(Any, Double)], (Any) => Int, (Double) => Double, (Double) => Double,
-      Double, Double, Double, (Double, Double) => Double) => (Any) => Int =
+    private val partitionerConstructor: (Int, Partitioner[T], Seq[(T, Double)],
+      Seq[(T, Double)], (T) => Int, (Double) => Double, (Double) => Double,
+      Double, Double, Double, (Double, Double) => Double) => (T) => Int =
       algorithm match {
         case "Scan" =>
-          constructPartitionerScan[Any]
+          constructPartitionerScan[T]
         case "Redist" =>
-          constructPartitionerRedist[Any]
+          constructPartitionerRedist[T]
         case "Readj" =>
-          GedikPartitioner2.constructPartitionerReadj[Any]
+          GedikPartitioner2.constructPartitionerReadj[T]
         case _ =>
           throw new IllegalArgumentException(s"Gedik algorithm should be either Scan or Readj")
       }
@@ -135,17 +134,15 @@ object GedikPartitioner {
       currFreqsSorted, prevFreqsSorted, prevPartitioner, betaS, betaC,
       thetaS, thetaC, thetaN, utility)
 
-    override def getPartition(key: Any): Int = partitioner(key)
+    override def getPartition(key: T): Int = partitioner(key)
 
-    override def update(partitioningInfo: PartitioningInfo): GedikPartitioner = {
+    override def update(partitioningInfo: PartitioningInfo[T]): GedikPartitioner[T] = {
       new GedikPartitioner(partitioningInfo.partitions, consistentHash,
         betaS, betaC, thetaS, thetaC, thetaN, utility,
         currFreqsSorted = partitioningInfo.heavyKeys,
         prevFreqsSorted = currFreqsSorted,
         prevP = Some(this), algorithm)
     }
-
-    override def toString: String = s"GedikPartitioner($algorithm, $id)"
 
   }
 
@@ -175,22 +172,22 @@ object GedikPartitioner {
     * Balance constraint for communication (network) load.
     * @param utility
     * Utility function (U) to set the importance of balance penalty (a) vs migration penalty (\gamma).
-    * @tparam K
+    * @tparam T
     * Type of key to be partitioned.
     * @return
     * Constructed partitioner.
     */
-  def constructPartitionerRedist[K](numPartitions: Int,
-    consistentHasher: Partitioner,
-    currFreqsSorted: Seq[(K, Double)],
-    prevFreqsSorted: Seq[(K, Double)],
-    prevP: K => Int,
+  def constructPartitionerRedist[T](numPartitions: Int,
+    consistentHasher: Partitioner[T],
+    currFreqsSorted: Seq[(T, Double)],
+    prevFreqsSorted: Seq[(T, Double)],
+    prevP: T => Int,
     betaS: Double => Double,
     betaC: Double => Double,
     thetaS: Double,
     thetaC: Double,
     thetaN: Double,
-    utility: (Double, Double) => Double): K => Int = {
+    utility: (Double, Double) => Double): T => Int = {
 
     val prevFreqsMap = prevFreqsSorted.toMap
     val currFreqsMap = currFreqsSorted.toMap
@@ -275,7 +272,7 @@ object GedikPartitioner {
     }
 
     // H_c in paper
-    val consistentHash: K => Int = consistentHasher.getPartition
+    val consistentHash: T => Int = consistentHasher.getPartition
 
     // TODO note: we use here the latest known frequencies, i.e. freqs in currFreqs if available,
     // TODO For items in both currFreqs and prevFreqs the prevFreqs is avoided.
@@ -350,16 +347,16 @@ object GedikPartitioner {
 
     var balancePenalties = Seq(balancePenaltyS, balancePenaltyC, balancePenaltyN)
 
-    def balancePenaltyByExplicitHash(h: Map[K, Int]): Double = {
+    def balancePenaltyByExplicitHash(h: Map[T, Int]): Double = {
 
       // inverting the map
       // TODO optimization: could probably construct an array in a more efficient way
       val inverseMap = (0 until numPartitions).map(p => (p, Iterable())).toMap ++ h.groupBy(_._2)
         .mapValues(_.keys)
-      val partitions: Seq[Iterable[K]] = Seq.tabulate(numPartitions)(inverseMap)
+      val partitions: Seq[Iterable[T]] = Seq.tabulate(numPartitions)(inverseMap)
 
       def resourceBalancePenalty(loadFunc: Double => Double, theta: Double): Double = {
-        val keyToLoad: K => Double = x => loadFunc(currFreqsMap(x))
+        val keyToLoad: T => Double = x => loadFunc(currFreqsMap(x))
         val loads = partitions.map(_.map(keyToLoad).sum)
 
         val avgLoad = loads.sum / loads.size
@@ -377,13 +374,13 @@ object GedikPartitioner {
     val toBePlaced = mutable.HashSet(currFreqsSorted: _*)
 
     var m = untrackedMigrationCost
-    val explicitHash = mutable.HashMap[K, Int]()
+    val explicitHash = mutable.HashMap[T, Int]()
 
     while (toBePlaced.nonEmpty) {
       // best placement, initially invalid
       var j = -1
       // best item to place
-      var d: Option[K] = None
+      var d: Option[T] = None
       var dFreq: Option[Double] = None
       // best utility value, lower is better
       var u = Double.MaxValue
@@ -450,23 +447,23 @@ object GedikPartitioner {
     * Balance constraint for communication (network) load.
     * @param utility
     * Utility function (U) to set the importance of balance penalty (a) vs migration penalty (\gamma).
-    * @tparam K
+    * @tparam T
     * Type of key to be partitioned.
     * @return
     * Constructed partitioner.
     */
-  def constructPartitionerScan[K](numPartitions: Int,
-    consistentHasher: Partitioner,
+  def constructPartitionerScan[T](numPartitions: Int,
+    consistentHasher: Partitioner[T],
     // fixme use Seq here
-    currFreqsSorted: Seq[(K, Double)],
-    prevFreqsSorted: Seq[(K, Double)],
-    prevP: K => Int,
+    currFreqsSorted: Seq[(T, Double)],
+    prevFreqsSorted: Seq[(T, Double)],
+    prevP: T => Int,
     betaS: Double => Double,
     betaC: Double => Double,
     thetaS: Double,
     thetaC: Double,
     thetaN: Double,
-    utility: (Double, Double) => Double): K => Int = {
+    utility: (Double, Double) => Double): T => Int = {
 
     val prevFreqsMap = prevFreqsSorted.toMap
     val currFreqsMap = currFreqsSorted.toMap
@@ -551,7 +548,7 @@ object GedikPartitioner {
     }
 
     // H_c in paper
-    val consistentHash: K => Int = consistentHasher.getPartition
+    val consistentHash: T => Int = consistentHasher.getPartition
 
     // TODO note: we use here the latest known frequencies, i.e. freqs in currFreqs if available,
     // TODO For items in both currFreqs and prevFreqs the prevFreqs is avoided.
@@ -626,16 +623,16 @@ object GedikPartitioner {
 
     var balancePenalties = Seq(balancePenaltyS, balancePenaltyC, balancePenaltyN)
 
-    def balancePenaltyByExplicitHash(h: Map[K, Int]): Double = {
+    def balancePenaltyByExplicitHash(h: Map[T, Int]): Double = {
 
       // inverting the map
       // TODO optimization: could probably construct an array in a more efficient way
       val inverseMap = (0 until numPartitions).map(p => (p, Iterable())).toMap ++ h.groupBy(_._2)
         .mapValues(_.keys)
-      val partitions: Seq[Iterable[K]] = Seq.tabulate(numPartitions)(inverseMap)
+      val partitions: Seq[Iterable[T]] = Seq.tabulate(numPartitions)(inverseMap)
 
       def resourceBalancePenalty(loadFunc: Double => Double, theta: Double): Double = {
-        val keyToLoad: K => Double = x => loadFunc(currFreqsMap(x))
+        val keyToLoad: T => Double = x => loadFunc(currFreqsMap(x))
         val loads = partitions.map(_.map(keyToLoad).sum)
 
         val avgLoad = loads.sum / loads.size
@@ -650,8 +647,8 @@ object GedikPartitioner {
       )
     }
 
-    val (explicitMapping, finalMigrationCost): (Map[K, Int], Double) =
-      currFreqsSorted.foldLeft((Map[K, Int](), untrackedMigrationCost)) {
+    val (explicitMapping, finalMigrationCost): (Map[T, Int], Double) =
+      currFreqsSorted.foldLeft((Map[T, Int](), untrackedMigrationCost)) {
         case ((explicitHash, m), (key, freq)) =>
           // best placement, initially invalid
           var j = -1

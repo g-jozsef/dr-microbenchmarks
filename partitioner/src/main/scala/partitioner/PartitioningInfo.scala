@@ -1,6 +1,7 @@
 package partitioner
 
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 /**
   * Informations required to construct the partitioner
@@ -14,14 +15,14 @@ import scala.annotation.tailrec
   * @param partitionHistogram distribution of partition sizes in the previous batch; not all
   *                           partitioner needs this information
   */
-case class PartitioningInfo(
+case class PartitioningInfo[T](
   partitions: Int,
   cut: Int,
   sCut: Int,
   level: Double,
-  heavyKeys: Seq[(Any, Double)],
-  partitionHistogram: Option[Map[Int, Double]] = None) {
-  val sortedKeys: Array[Any] = heavyKeys.map(_._1).toArray
+  heavyKeys: Seq[(T, Double)],
+  partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]) {
+  val sortedKeys: Array[T] = heavyKeys.map(_._1).toArray
   val sortedValues: Array[Double] = heavyKeys.map(_._2).toArray
 
   override def toString: String = {
@@ -32,8 +33,8 @@ case class PartitioningInfo(
 
 // Create PartitioningInfo from global key histogram
 object PartitioningInfo {
-  def newInstance(globalHistogram: scala.collection.Seq[(Any, Double)], numPartitions: Int,
-    treeDepthHint: Int, sCutHint: Int = 0, partitionHistogram: Option[Map[Int, Double]] = None): PartitioningInfo = {
+  def newInstance[T](globalHistogram: scala.collection.Seq[(T, Double)], numPartitions: Int,
+    treeDepthHint: Int, sCutHint: Int = 0, partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]): PartitioningInfo[T] = {
     require(numPartitions > 0, "Where's my number of partitions, I can not call you maybe!")
 
     val sortedValues = globalHistogram.map(_._2).toArray.take(numPartitions)
@@ -62,6 +63,6 @@ object PartitioningInfo {
       */
     val level = Math.max(0, (1.0d - sortedValues.take(actualSCut).sum) / (numPartitions - actualSCut))
     val actualCut = actualSCut + actualPCut
-    PartitioningInfo(numPartitions, actualCut, actualSCut, level, globalHistogram, partitionHistogram)
+    PartitioningInfo[T](numPartitions, actualCut, actualSCut, level, globalHistogram, partitionHistogram)
   }
 }

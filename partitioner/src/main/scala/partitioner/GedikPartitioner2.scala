@@ -8,18 +8,18 @@ import scala.collection.mutable
 
 object GedikPartitioner2 {
 
-  def constructPartitionerReadj[K](numPartitions: Int,
-    consistentHasher: Partitioner,
-    // fixme use Seq here
-    currFreqsSorted: Seq[(K, Double)],
-    prevFreqsSorted: Seq[(K, Double)],
-    prevP: K => Int,
-    betaS: Double => Double,
-    betaC: Double => Double,
-    thetaS: Double,
-    thetaC: Double,
-    thetaN: Double,
-    utility: (Double, Double) => Double): K => Int = {
+  def constructPartitionerReadj[T](numPartitions: Int,
+                                   consistentHasher: Partitioner[T],
+                                   // fixme use Seq here
+                                   currFreqsSorted: Seq[(T, Double)],
+                                   prevFreqsSorted: Seq[(T, Double)],
+                                   prevP: T => Int,
+                                   betaS: Double => Double,
+                                   betaC: Double => Double,
+                                   thetaS: Double,
+                                   thetaC: Double,
+                                   thetaN: Double,
+                                   utility: (Double, Double) => Double): T => Int = {
 
     val prevFreqsMap = prevFreqsSorted.toMap
     val currFreqsMap = currFreqsSorted.toMap
@@ -31,16 +31,16 @@ object GedikPartitioner2 {
     // the communication cost is considered linear, see paper for more details
     def loadFuncN(freq: Double) = freq
 
-    def balancePenaltyByExplicitHash(h: Map[K, Int]): Double = {
+    def balancePenaltyByExplicitHash(h: Map[T, Int]): Double = {
 
       // inverting the map
       // TODO optimization: could probably construct an array in a more efficient way
       val inverseMap = (0 until numPartitions).map(p => (p, Iterable())).toMap ++ h.groupBy(_._2)
         .mapValues(_.keys)
-      val partitions: Seq[Iterable[K]] = Seq.tabulate(numPartitions)(inverseMap)
+      val partitions: Seq[Iterable[T]] = Seq.tabulate(numPartitions)(inverseMap)
 
       def resourceBalancePenalty(loadFunc: Double => Double, theta: Double): Double = {
-        val keyToLoad: K => Double = x => loadFunc(currFreqsMap(x))
+        val keyToLoad: T => Double = x => loadFunc(currFreqsMap(x))
         val loads = partitions.map(_.toStream.map(keyToLoad).sum)
 
         val avgLoad = loads.sum / loads.size
@@ -184,7 +184,7 @@ object GedikPartitioner2 {
     }
 
     // H_c in paper
-    val consistentHash: K => Int = consistentHasher.getPartition
+    val consistentHash: T => Int = consistentHasher.getPartition
 
     // TODO note: we use here the latest known frequencies, i.e. freqs in currFreqs if available,
     // TODO For items in both currFreqs and prevFreqs the prevFreqs is avoided.
@@ -213,12 +213,12 @@ object GedikPartitioner2 {
     // denoted by (H_p)^(t+1) in paper
     var explicitHash = currFreqsSorted.toStream.map(_._1).map(d => d -> prevP(d)).toMap
     var invExplicitHash =
-      (0 until numPartitions).map((_, Set[K]())).toMap ++
+      (0 until numPartitions).map((_, Set[T]())).toMap ++
         explicitHash.toSeq.groupBy(_._2).mapValues(_.map(_._1).toSet)
 
     val xs: Seq[Any] = null
 
-    type Readj = Option[(Int, K, Int, Option[K])]
+    type Readj = Option[(Int, T, Int, Option[T])]
 
     // initialize balance penalties
     balancePenalties = balancePenalties.map(penalty => explicitHash.foldLeft(penalty) {
@@ -227,11 +227,11 @@ object GedikPartitioner2 {
     })
 
     var isRunning = true
-    val numReadjPerKey = new mutable.HashMap[K, Int]
+    val numReadjPerKey = new mutable.HashMap[T, Int]
     // limit number of readjustments per key
     val c = 5
 
-    def notOverReadjLimit(d: K): Boolean = {
+    def notOverReadjLimit(d: T): Boolean = {
       numReadjPerKey.getOrElse(d, 0) <= c
     }
 

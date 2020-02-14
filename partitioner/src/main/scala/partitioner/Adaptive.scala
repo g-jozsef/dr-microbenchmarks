@@ -1,7 +1,5 @@
 package partitioner
 
-trait Adaptive[P <: Adaptive[P]] extends Partitioner {
-
-  def adapt(partitioningInfo: PartitioningInfo, newWeighting: Array[Double]): P
-
+trait Adaptive[P <: Adaptive[P, T], T] extends Partitioner[T] {
+  def adapt(partitioningInfo: PartitioningInfo[T], newWeighting: Array[Double]): P
 }

@@ -3,41 +3,41 @@ package partitioner
 import MixedPartitioner._
 import utils.AdvancedBinarySearch.binarySearch
 
-class MixedPartitioner(
+class MixedPartitioner[T](
   override val numPartitions: Int,
   val aMax: Int,
   val thetaMax: Double,
-  val routingTable: Map[Any, Int],
-  val consistentHasher: ConsistentHashPartitioner) extends Updateable {
+  val routingTable: Map[T, Int],
+  val consistentHasher: ConsistentHashPartitioner[T]) extends Updateable[T] {
 
   def this(numPartitions: Int, aMax: Int, thetaMax: Double) = {
-    this(numPartitions, aMax, thetaMax, Map[Any, Int](),
-      new ConsistentHashPartitioner(
+    this(numPartitions, aMax, thetaMax, Map[T, Int](),
+      new ConsistentHashPartitioner[T](
         Array.fill[Double](numPartitions)(1.0d / numPartitions),
         replicationFactor))
   }
 
-  override def getPartition(key: Any): Int = {
+  override def getPartition(key: T): Int = {
     routingTable.get(key) match {
       case Some(part) => part
       case None => consistentHasher.getPartition(key)
     }
   }
 
-  override def update(partitioningInfo: PartitioningInfo): MixedPartitioner = {
+  override def update(partitioningInfo: PartitioningInfo[T]): MixedPartitioner[T] = {
 
     // Algorithm
-    val keysToFrequencies: Map[Any, Double] = partitioningInfo.heavyKeys.toMap[Any, Double]
-    var newRoutingTable: Map[Any, Int] = null
+    val keysToFrequencies: Map[T, Double] = partitioningInfo.heavyKeys.toMap[T, Double]
+    var newRoutingTable: Map[T, Int] = null
     var n = 0
     val maxLoad = (thetaMax + 1.0d) / numPartitions
     val initialLoads = partitioningInfo.partitionHistogram.getOrElse(
       throw new RuntimeException("Partition histogram is missing!"))
 
-    def createPartitionsToKeysMap(): Map[Int, Vector[Any]] = {
-      var partitionsToKeysMap = Map[Int, Vector[Any]]()
+    def createPartitionsToKeysMap(): Map[Int, Vector[T]] = {
+      var partitionsToKeysMap = Map[Int, Vector[T]]()
       for (p <- 0 until numPartitions) {
-        partitionsToKeysMap = partitionsToKeysMap + (p -> Vector[Any]())
+        partitionsToKeysMap = partitionsToKeysMap + (p -> Vector[T]())
       }
 
       for (key <- partitioningInfo.heavyKeys.map(_._1)) {
@@ -50,7 +50,7 @@ class MixedPartitioner(
     val initialPartitionsToKeysMap = createPartitionsToKeysMap()
     var heavyKeys = routingTable.keys.toVector.sortBy(key => keysToFrequencies(key))
 
-    def memory(key: Any): Double = {
+    def memory(key: T): Double = {
       keysToFrequencies(key)
     }
 
@@ -77,7 +77,7 @@ class MixedPartitioner(
 
       // phase II
       // works under the assumption that beta > 1 and c(k) ~ S(k)
-      var keysToMigrate: Seq[Any] = Seq[Any]()
+      var keysToMigrate: Seq[T] = Seq[T]()
 
       for (part <- 0 until numPartitions) {
         var keys = partitionsToKeysMap(part)
@@ -93,7 +93,7 @@ class MixedPartitioner(
         partitionsToKeysMap = partitionsToKeysMap + (part -> keys)
       }
 
-      def adjust(key: Any, part: Int): Boolean = {
+      def adjust(key: T, part: Int): Boolean = {
         val freq = keysToFrequencies(key)
         val load = loads(part)
         if (load + freq <= maxLoad) {
@@ -109,7 +109,7 @@ class MixedPartitioner(
           val excess = load + freq - maxLoad
           var sum = 0.0d
           val keys = partitionsToKeysMap(part)
-          val start = binarySearch[Any](keys, key, (k: Any) => -keysToFrequencies(k))
+          val start = binarySearch[T](keys, key, (k: T) => -keysToFrequencies(k))
           var end = start
           // TODO: test
           while (sum < excess && end < keys.length) {
@@ -165,8 +165,6 @@ class MixedPartitioner(
 
     new MixedPartitioner(numPartitions, aMax, thetaMax, newRoutingTable, consistentHasher)
   }
-
-  override def toString: String = s"MixedPartitioner($id)"
 
 }
 
