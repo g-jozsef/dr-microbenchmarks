@@ -1,7 +1,7 @@
-package utils
+package partitioner
 
-import utils.AdvancedBinarySearch._
-import utils.MixedPartitioner._
+import MixedPartitioner._
+import utils.AdvancedBinarySearch.binarySearch
 
 class MixedPartitioner(
   override val numPartitions: Int,

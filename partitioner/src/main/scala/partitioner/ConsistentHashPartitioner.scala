@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 import scala.util.hashing.MurmurHash3
 

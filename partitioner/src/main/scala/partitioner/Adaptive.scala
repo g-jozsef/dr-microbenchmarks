@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 trait Adaptive[P <: Adaptive[P]] extends Partitioner {
 

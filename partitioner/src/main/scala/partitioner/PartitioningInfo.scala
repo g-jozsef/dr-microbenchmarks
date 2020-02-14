@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 import scala.annotation.tailrec
 

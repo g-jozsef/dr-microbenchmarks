@@ -1,4 +1,6 @@
-package utils
+package partitioner
+
+import utils.StringGenerator
 
 trait Partitioner extends Serializable {
 

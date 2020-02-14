@@ -3,7 +3,8 @@ package measurements
 import java.nio.ByteBuffer
 
 import com.google.common.hash.Hashing
-import utils.GedikPartitioner.GedikPartitioner
+import partitioner.GedikPartitioner.GedikPartitioner
+import partitioner.{ConsistentHashPartitioner, HashPartitioner, KeyIsolatorPartitioner, MixedPartitioner, Partitioner, PartitioningInfo, Updateable}
 import utils._
 
 import scala.io.Source
@@ -232,25 +233,25 @@ object TimeSeriesStreamingMBMeasurement {
 
   // calculate migration cost on a partitioner update assuming linear state
   def measureExactMigrationCost(
-    oldPartitioner: Partitioner,
-    newPartitioner: Partitioner,
-    keyHistogram: Map[Any, Double]): Double = {
+                                 oldPartitioner: Partitioner,
+                                 newPartitioner: Partitioner,
+                                 keyHistogram: Map[Any, Double]): Double = {
     keyHistogram.filterKeys(k => oldPartitioner.getPartition(k) != newPartitioner.getPartition(k)).values.sum
   }
 
   // calculate migration cost on a partitioner update assuming constant state
   def measureExactMigrationCost2(
-    oldPartitioner: Partitioner,
-    newPartitioner: Partitioner,
-    keyHistogram: Map[Any, Double]): Double = {
+                                  oldPartitioner: Partitioner,
+                                  newPartitioner: Partitioner,
+                                  keyHistogram: Map[Any, Double]): Double = {
     keyHistogram.filterKeys(k => oldPartitioner.getPartition(k) != newPartitioner.getPartition(k)).size.toDouble / keyHistogram.size
   }
 
   // calculate balance of partitioning relative to the optimal balance
   def measureBalance(
-    optimalBalance: Double,
-    partitioner: Partitioner,
-    keyHistogram: Map[Any, Double]): Double = {
+                      optimalBalance: Double,
+                      partitioner: Partitioner,
+                      keyHistogram: Map[Any, Double]): Double = {
     val partitionHistogram = new Array[Double](partitioner.numPartitions)
     keyHistogram.toSeq.foreach({ case (k, v) =>
       partitionHistogram(partitioner.getPartition(k)) += v

@@ -3,7 +3,8 @@ package measurements
 import java.nio.ByteBuffer
 
 import com.google.common.hash.Hashing
-import utils.GedikPartitioner.GedikPartitioner
+import partitioner.GedikPartitioner.GedikPartitioner
+import partitioner.{ConsistentHashPartitioner, KeyIsolatorPartitioner, MixedPartitioner, PartitioningInfo, Updateable}
 import utils._
 
 import scala.util.Random

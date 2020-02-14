@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 /**
   * Capability of a partitioner to estimate its migration cost

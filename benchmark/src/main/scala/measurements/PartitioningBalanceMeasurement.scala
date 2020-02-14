@@ -3,7 +3,8 @@ package measurements
 import java.nio.ByteBuffer
 
 import com.google.common.hash.Hashing
-import utils.GedikPartitioner.GedikPartitioner
+import partitioner.GedikPartitioner.GedikPartitioner
+import partitioner.{ConsistentHashPartitioner, HashPartitioner, KeyIsolatorPartitioner, MixedPartitioner, Partitioner, PartitioningInfo}
 import utils._
 
 /**
@@ -134,6 +135,7 @@ object PartitioningBalanceMeasurement {
 
       val balanceMeasurements = new Array[Double](iterations)
       for (i <- 0 until iterations) {
+        println(s"\nRunning iteration $i...")
         val partitionHistogram = Array.fill[Double](numPartitions)(0.0d)
 
         // create keys; new random keys must be created for every measurement to average out
@@ -151,21 +153,23 @@ object PartitioningBalanceMeasurement {
         // partition; good for analyzing heavy-key balance and lightweight-key balance separately
         {
           val heavyKeys = keys.take(keyExcess * numPartitions)
+          println(s"Heavy keys: [${heavyKeys.mkString(", ")}]")
           var heavyKeysHistogram = Array.fill[List[Double]](numPartitions)(List.empty[Double])
           partitioner.asInstanceOf[KeyIsolatorPartitioner[ConsistentHashPartitioner]]
             .heavyKeysMap.foreach({ case (k, p) => heavyKeysHistogram(p) :+= keyHistogram(heavyKeys.indexOf(k)) })
           heavyKeysHistogram = heavyKeysHistogram.map(l => l.sortBy(-_))
           val sorted = partitionHistogram.zip(heavyKeysHistogram).sortBy(-_._2.sum)
           val s2 = sorted.map(_._2)
-          println(sorted.map(_._1).mkString(", "))
+          println(s"Sorted partition histogram: \n   [${pretty(sorted.map(_._1))}]")
           val m: Int = heavyKeysHistogram.map(_.size).max
           for (i <- 1 to m) {
-            println(s2.map(l => if (l.size >= i) l(i - 1) else 0.0d).mkString(", "))
+            println(s"$i: [${pretty(s2.map(l => if (l.size >= i) l(i - 1) else 0.0d))}]")
           }
         }
 
         // load imbalance (assuming linear processing time for key groups)
         val maxPartitionSize = partitionHistogram.max
+        println(s"Iteration $i measurement: $maxPartitionSize")
         balanceMeasurements(i) = maxPartitionSize
       }
 
@@ -173,13 +177,16 @@ object PartitioningBalanceMeasurement {
       val drop = (iterations * cutdown).toInt
       val avg = Mean(balanceMeasurements.sorted.drop(drop).dropRight(drop))
       val metric = avg
-      print(s"$metric ")
+      print(s"\nMeasured load imbalance: $metric ")
     }
 
     // call measureBalance with power-law (zeta) distribution
     measureBalance(Distribution.zeta(exponent, shift, numKeys).probabilities, numPartitions)
   }
 
+  def pretty[A](trav: Traversable[A]): String = {
+    trav.map(x=>x.toString.padTo(25, ' ')).mkString(", ")
+  }
   // generate a random string key with the seed attached to the end
   def transformKey(k: Int, seed: Int): String = StringGenerator.generateRandomString(k) + seed.toString
 }

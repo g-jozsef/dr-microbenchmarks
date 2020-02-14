@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 class HashPartitioner(override val numPartitions: Int) extends Partitioner {
   require(numPartitions >= 0, s"Number of partitions ($numPartitions) should be non-negative.")

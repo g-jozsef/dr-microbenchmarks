@@ -1,4 +1,4 @@
-package utils
+package partitioner
 
 /**
   * An updateable partitioner.

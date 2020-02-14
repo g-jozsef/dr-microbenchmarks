@@ -1,8 +1,9 @@
-package utils
+package partitioner
 
 import com.google.common.collect.TreeMultiset
+import utils.{Distribution, SortedTree}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters.mapAsJavaMap
 import scala.collection.immutable.{HashMap, TreeMap}
 import scala.collection.mutable
 

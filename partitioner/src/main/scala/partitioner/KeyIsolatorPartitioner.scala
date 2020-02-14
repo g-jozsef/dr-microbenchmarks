@@ -1,8 +1,7 @@
-package utils
-
-import utils.KeyIsolatorPartitioner._
+package partitioner
 
 import scala.collection.immutable.{HashMap, TreeSet}
+import KeyIsolatorPartitioner._
 
 class KeyIsolatorPartitioner[T <: Adaptive[T] with MigrationCostEstimator] private(
   override val numPartitions: Int,
