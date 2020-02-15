@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import com.google.common.hash.Hashing
 import partitioner.GedikPartitioner.GedikPartitioner
 import partitioner.Partitioner.PartitionerType
+import partitioner.Partitioner.PartitionerType.PartitionerType
 import partitioner._
 import utils._
 
@@ -86,7 +87,7 @@ object PartitioningBalanceMeasurement extends PartitionerBenchmarkOptionHandler 
 
       // this block of code is optional; it prints a sorted list of heavy keys for each
       // partition; good for analyzing heavy-key balance and lightweight-key balance separately
-      if (getOption[String]('partitionerType) == "KeyIsolator") {
+      if (getOption[PartitionerType]('partitionerType) == PartitionerType.KeyIsolator) {
         val heavyKeys = weights.map(x => x._1).take(getOption[Int]('keyExcess) * numPartitions)
         println(s"Heavy keys: [${heavyKeys.mkString(", ")}]")
         var heavyKeysHistogram = Array.fill[List[Double]](numPartitions)(List.empty[Double])
@@ -109,7 +110,7 @@ object PartitioningBalanceMeasurement extends PartitionerBenchmarkOptionHandler 
     }
 
     // throw away outliers and average measurements
-    val drop = (iterations * getOption[Double]('cutdown)).toInt
+    val drop = (iterations * getOption[Double]('cutDown)).toInt
     val avg = Mean(balanceMeasurements.sorted.drop(drop).dropRight(drop))
     val metric = avg
     print(s"\nMeasured load imbalance: $metric ")
