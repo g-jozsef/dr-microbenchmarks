@@ -2,27 +2,32 @@ package utils
 
 trait OptionHandler {
   type OptionMap = Map[Symbol, Any]
+  type OptionFactoryMap = Map[String, (Symbol, String => Any)]
 
-  protected val usage: String =
-    """
-      |
-      |""".stripMargin
-  protected val defaultOptions: OptionMap
-  protected val options: Map[String, (Symbol, String => Any)]
   private var optionsMap: Option[OptionMap] = None
+
+
+  def getUsage: String
+  def getDefaultOptions: OptionMap
+  def getOptions: OptionFactoryMap
 
   final def readOptions(args: Array[String]): Unit = {
     try {
       optionsMap = Some(nextOption(Map(), args.toList))
-      if (!options.values.forall {
+      var missing = Seq.empty[String]
+      if (!getOptions.values.forall {
         case (symbol: Symbol, _) =>
-          optionsMap.get.contains(symbol) || defaultOptions.contains(symbol)
+          val ok = optionsMap.get.contains(symbol) || getDefaultOptions.contains(symbol)
+          if(!ok) {
+            missing ++= Seq(getOptions.find(x=>x._2._1 == symbol).get._1)
+          }
+          ok
       })
-        throw new IllegalArgumentException("Not all required parameters have values!")
+        throw new IllegalArgumentException(s"Not all required parameters have values!\nMissing parameters are: {${missing.mkString(",")}]")
     } catch {
       case ex: IllegalArgumentException =>
         println(ex.getMessage)
-        println(usage)
+        println(getUsage)
         System.exit(1)
         Map()
     }
@@ -32,9 +37,13 @@ trait OptionHandler {
   final def nextOption(map: OptionMap, params: List[String]): OptionMap = params match {
     case Nil =>
       map
-    case key :: value :: tail if options.contains(key) =>
-      val symbol = options(key)._1
-      val transformedValue = options(key)._2(value)
+    case "-h" :: _ | "-help" :: _ =>
+      println(getUsage)
+      System.exit(0)
+      Map()
+    case key :: value :: tail if getOptions.contains(key) =>
+      val symbol = getOptions(key)._1
+      val transformedValue = getOptions(key)._2(value)
       nextOption(map ++ Map(symbol -> transformedValue), tail)
     case option :: _ =>
       throw new IllegalArgumentException("Unknown option " + option)
@@ -43,15 +52,22 @@ trait OptionHandler {
 
 
   final def getOption[T](symbol: Symbol): T = {
+    if(optionsMap.isEmpty) {
+      throw new IllegalStateException("No options found, did you forget to call readOptions?")
+    }
     if (optionsMap.get.contains(symbol))
       optionsMap.get(symbol).asInstanceOf[T]
-    else if (defaultOptions.contains(symbol))
-      defaultOptions(symbol).asInstanceOf[T]
+    else if (getDefaultOptions.contains(symbol))
+      getDefaultOptions(symbol).asInstanceOf[T]
     else {
       println("Missing required option: " + symbol.toString())
-      println(usage)
+      println(getUsage)
       System.exit(1)
-      throw new IllegalArgumentException("Missing required option: " + symbol.toString())
+      val option = getOptions.find(x=>x._2._1 == symbol)
+      if(option.isEmpty)
+        throw new IllegalArgumentException("Unknown symbol: " + symbol.toString())
+      else
+        throw new IllegalArgumentException("Missing required option: " + option.get._1)
     }
   }
 }
