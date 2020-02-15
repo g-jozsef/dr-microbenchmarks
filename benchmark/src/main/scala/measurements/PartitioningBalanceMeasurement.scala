@@ -68,14 +68,14 @@ object PartitioningBalanceMeasurement extends PartitionerBenchmarkOptionHandler 
       val weights = Vector.tabulate(keyHistogram.length)(i => (transformKey(i, i), keyHistogram(i))).toArray
 
       // create the partitioner
-      val partitioner = Partitioner[String](getOption('partitionerType),
+      var partitioner = Partitioner[String](getOption('partitionerType),
         numPartitions,
         getOption('keyExcess),
         getOption('thetaMax))
 
       partitioner match {
         case updatable: Updateable[String] =>
-          Partitioner.update(updatable, weights, getOption('keyExcess), numPartitions)
+          partitioner = Partitioner.update(updatable, weights, getOption('keyExcess), numPartitions)
         case _ =>
       }
 
