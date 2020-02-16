@@ -33,7 +33,7 @@ object Partitioner {
     partitioner match {
       case _: GedikPartitioner[T] | _: KeyIsolatorPartitioner[ConsistentHashPartitioner[T], T] =>
         // informations needed to construct the partitioner
-        val partitioningInfo = PartitioningInfo.newInstance[T](weights.take(keyExcess * numPartitions + 1), numPartitions, treeDepthHint)
+        val partitioningInfo: PartitioningInfo[T] = PartitioningInfo[T](weights.take(keyExcess * numPartitions + 1), numPartitions, treeDepthHint)
 
         partitioner.update(partitioningInfo)
       case _: MixedPartitioner[T] =>
@@ -47,7 +47,7 @@ object Partitioner {
             partitionHistogram = partitionHistogram + (part -> (partitionHistogram(part) + weight))
         }
         // Mixed partitioner needs a different partitioning info
-        val partitioningInfo = PartitioningInfo.newInstance(weights, numPartitions, treeDepthHint,
+        val partitioningInfo: PartitioningInfo[T] = PartitioningInfo[T](weights, numPartitions, treeDepthHint,
           partitionHistogram = Some(partitionHistogram))
 
         // update Mixed partitioner

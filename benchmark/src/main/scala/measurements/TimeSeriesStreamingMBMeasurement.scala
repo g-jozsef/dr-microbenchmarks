@@ -174,8 +174,8 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
               val part = partit.getPartition(k)
               retentivePartitionHistogram = retentivePartitionHistogram + (part -> (retentivePartitionHistogram(part) + retentiveKeyHistogramMap(k)))
             })
-            PartitioningInfo.newInstance(retentiveKeyHistogram, numPartitions, treeDepthHint, partitionHistogram = Some(retentivePartitionHistogram))
-          case _ => PartitioningInfo.newInstance(retentiveKeyHistogram.take(2 * numPartitions + 1), numPartitions, treeDepthHint)
+            PartitioningInfo(retentiveKeyHistogram, numPartitions, treeDepthHint, partitionHistogram = Some(retentivePartitionHistogram))
+          case _ => PartitioningInfo(retentiveKeyHistogram.take(2 * numPartitions + 1), numPartitions, treeDepthHint)
         }
 
         // best balance achievable for any key distribution and partitioner
