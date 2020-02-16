@@ -2,6 +2,7 @@ package partitioner
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+import utils.computeIf
 
 /**
   * Informations required to construct the partitioner
@@ -16,12 +17,12 @@ import scala.reflect.ClassTag
   *                           partitioner needs this information
   */
 case class PartitioningInfo[T](
-  partitions: Int,
-  cut: Int,
-  sCut: Int,
-  level: Double,
-  heavyKeys: Seq[(T, Double)],
-  partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]) {
+                                partitions: Int,
+                                cut: Int,
+                                sCut: Int,
+                                level: Double,
+                                heavyKeys: Seq[(T, Double)],
+                                partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]) {
   val sortedKeys: Array[T] = heavyKeys.map(_._1).toArray
   val sortedValues: Array[Double] = heavyKeys.map(_._2).toArray
 
@@ -34,30 +35,31 @@ case class PartitioningInfo[T](
 // Create PartitioningInfo from global key histogram
 object PartitioningInfo {
   def newInstance[T](globalHistogram: scala.collection.Seq[(T, Double)], numPartitions: Int,
-    treeDepthHint: Int, sCutHint: Int = 0, partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]): PartitioningInfo[T] = {
+                     treeDepthHint: Int, sCutHint: Int = 0, partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]): PartitioningInfo[T] = {
     require(numPartitions > 0, "Where's my number of partitions, I can not call you maybe!")
 
     val sortedValues = globalHistogram.map(_._2).toArray.take(numPartitions)
     val pCutHint = Math.pow(2, treeDepthHint - 1).toInt
     val startingCut = Math.min(numPartitions, sortedValues.length)
-    var computedSCut = 0
-    var computedLevel = 1.0d / numPartitions
     var remainder = 1.0d
+    var computedLevel = remainder / numPartitions
 
-    @tailrec
-    def computeCuts(i: Int): Unit = {
-      if (i < startingCut && computedLevel <= sortedValues(i)) {
-        remainder -= sortedValues(i)
-        if (i < numPartitions - 1) computedLevel = remainder / (numPartitions - 1 - i) else computedLevel = 0.0d
-        computedSCut += 1
-        computeCuts(i + 1)
+    val computedSCut = ((0 until startingCut) zip sortedValues).takeWhile({
+      case (i: Int, sortedValue: Double) => {
+        computeIf(computedLevel <= sortedValue, () => {
+          remainder -= sortedValue
+          computedLevel =
+            if (i < numPartitions - 1)
+              remainder / (numPartitions - 1 - i)
+            else
+              0.0d
+        })
       }
-    }
-
-    computeCuts(0)
+    }).length
 
     val actualSCut = Math.max(sCutHint, computedSCut)
     val actualPCut = Math.min(pCutHint, startingCut - actualSCut)
+
     /**
       * Recompute level to minimize rounding errors.
       */
