@@ -60,8 +60,7 @@ object Updateable {
       case PartitionerType.Mixed =>
         // max size of hash table set to be the same as for KIP
         val aMax = keyExcess * numPartitions + 1
-        val partitioner = new MixedPartitioner[T](numPartitions, aMax, thetaMax)
-        partitioner
+        new MixedPartitioner[T](numPartitions, aMax, thetaMax)
       case unknown =>
         throw new RuntimeException(s"Unknown partitioner: `$unknown`")
     }

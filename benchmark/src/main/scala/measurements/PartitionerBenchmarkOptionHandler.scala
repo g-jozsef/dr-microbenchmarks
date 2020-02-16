@@ -30,11 +30,8 @@ trait PartitionerBenchmarkOptionHandler extends OptionHandler {
       case unknown => throw new IllegalArgumentException(s"Unknown partitioner: $unknown")
     }),
     "-npart" -> ('numPartitions, (x: String) => x.toInt),
-    "-nkeys" -> ('numKeys, (x: String) => x.toInt),
     "-iter" -> ('iterations, (x: String) => x.toInt),
     "-cutdown" -> ('cutDown, (x: String) => x.toDouble),
-    "-exp" -> ('exponent, (x: String) => x.toDouble),
-    "-shift" -> ('shift, (x: String) => x.toDouble),
     "-tmax" -> ('thetaMax, (x: String) => x.toDouble),
     "-kexc" -> ('keyExcess, (x: String) => x.toInt),
   )
@@ -43,7 +40,6 @@ trait PartitionerBenchmarkOptionHandler extends OptionHandler {
     'partitionerType -> PartitionerType.KeyIsolator,
     'numPartitions -> 50,
     'cutDown -> 0.1d,
-    'shift -> 10d,
     'thetaMax -> 0.1d,
     'keyExcess -> 2,
   )

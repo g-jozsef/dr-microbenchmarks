@@ -28,7 +28,14 @@ object PartitioningBalanceMeasurement extends PartitionerBenchmarkOptionHandler 
   private val defaultOptions: OptionMap = super.getDefaultOptions ++ Map(
     'numKeys -> 1000,
     'iterations -> 10,
+    'shift -> 10d,
     'exponent -> 1.5d
+  )
+
+  private val options: OptionFactoryMap = super.getOptions ++ Map(
+    "-nkeys" -> ('numKeys, (x: String) => x.toInt),
+    "-exp" -> ('exponent, (x: String) => x.toDouble),
+    "-shift" -> ('shift, (x: String) => x.toDouble),
   )
 
   override def getUsage: String = usage

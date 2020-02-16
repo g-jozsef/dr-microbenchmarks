@@ -1,6 +1,7 @@
 package measurements
 
 import partitioner.Partitioner.PartitionerType
+import partitioner.Partitioner.PartitionerType.PartitionerType
 import partitioner.Updateable
 import utils.ValueGenerator.StringKeyedRecordGenerator
 import utils._
@@ -35,6 +36,7 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
     'numKeys -> 1000000,
     'iterations -> 100,
     'exponent -> 1d,
+    'shift -> 10d,
 
     'batchSize -> 100000,
     'numBatches -> 20,
@@ -45,6 +47,7 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
   )
 
   private val options = super.getOptions ++ Map(
+    "-nkeys" -> ('numKeys, (x: String) => x.toInt),
     "-batchsize" -> ('batchSize, (x: String) => x.toInt),
     "-nbatch" -> ('numBatches, (x: String) => x.toInt),
     "-keyshuf" -> ('keyShuffling, (x: String) => x.toInt),
@@ -60,28 +63,39 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
 
   def main(args: Array[String]): Unit = {
     readOptions(args)
+    val exponent: Double = getOption('exponent)
+    val shift: Double = getOption('shift)
+    val numKeys: Int = getOption('numKeys)
+    val blockToUse: Int = getOption[Int]('blockToUse)
+    val partitionerType: PartitionerType = getOption('partitionerType)
+    val numBatches: Int = getOption('numBatches)
+    val batchSize: Int = getOption('batchSize)
+    val numPartitions: Int = getOption('numPartitions)
+    val keyExcess: Int = getOption('keyExcess)
+    val thetaMax: Double = getOption('thetaMax)
+    val iterations = getOption[Int]('iterations)
+    val cutdown = getOption[Double]('cutDown)
 
     // power-law (zeta) key-distribution
-    val distribution = Distribution.zeta(getOption('exponent), getOption('shift), getOption('numKeys))
+    val distribution = Distribution.zeta(exponent, shift, numKeys)
 
     val stringGenerator = new StringKeyedRecordGenerator()
 
     val codeBlock: CodeBlock =
-      getOption[Int]('blockToUse) match {
+      blockToUse match {
         case 1 =>
-
           // code block #1 to measure; updates partitioner without key-shuffling, but each time a new
           // sample will be drawn from the key-distribution
           new PartitionerCodeBlock[String](
             distribution,
             stringGenerator,
-            getOption('partitionerType),
-            getOption('numBatches),
-            getOption('batchSize),
-            getOption('numPartitions),
-            getOption('numKeys),
-            getOption('keyExcess),
-            getOption('thetaMax)
+            partitionerType,
+            numBatches,
+            batchSize,
+            numPartitions,
+            numKeys,
+            keyExcess,
+            thetaMax
           ) {
             // initialize the next measurement, this is not measured
             override def init(): Unit = {
@@ -89,7 +103,6 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
               initPartitioningInfo()
               i = i + 1
             }
-
           }
 
         case 2 =>
@@ -99,13 +112,13 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
           new PartitionerCodeBlock[String](
             distribution,
             stringGenerator,
-            getOption('partitionerType),
-            getOption('numBatches),
-            getOption('batchSize),
-            getOption('numPartitions),
-            getOption('numKeys),
-            getOption('keyExcess),
-            getOption('thetaMax)
+            partitionerType,
+            numBatches,
+            batchSize,
+            numPartitions,
+            numKeys,
+            keyExcess,
+            thetaMax
           ) {
             // initialize the next measurement, this is not measured
             override def init(): Unit = {
@@ -126,9 +139,6 @@ object PartitionerUpdateMeasurement extends PartitionerBenchmarkOptionHandler {
       }
 
     // measure code block with MicroBenchmarkUtils, print the result
-    val iterations = getOption[Int]('iterations)
-    val numBatches = getOption[Int]('numBatches)
-    val cutdown = getOption[Double]('cutDown)
     val measurement = MicroBenchmarkUtil.measure(codeBlock, iterations * numBatches, Mean, cutdown)
     println(s"${getOption[String]('partitionerType)} update measurement with key shuffling took $measurement ms " +
       s"(averaged on $iterations iterations with $cutdown cutdown)")
