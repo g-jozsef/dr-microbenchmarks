@@ -15,13 +15,13 @@ import scala.reflect.ClassTag
   * @param partitionHistogram distribution of partition sizes in the previous batch; not all
   *                           partitioner needs this information
   */
-case class PartitioningInfo[T](
-  partitions: Int,
-  cut: Int,
-  sCut: Int,
-  level: Double,
-  heavyKeys: Seq[(T, Double)],
-  partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]) {
+class PartitioningInfo[T](
+                           val partitions: Int,
+                           val cut: Int,
+                           val sCut: Int,
+                           val level: Double,
+                           val heavyKeys: Seq[(T, Double)],
+                           val partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]) {
   val sortedKeys: Array[T] = heavyKeys.map(_._1).toArray
   val sortedValues: Array[Double] = heavyKeys.map(_._2).toArray
 
@@ -33,9 +33,14 @@ case class PartitioningInfo[T](
 
 // Create PartitioningInfo from global key histogram
 object PartitioningInfo {
-  def newInstance[T](globalHistogram: scala.collection.Seq[(T, Double)], numPartitions: Int,
-    treeDepthHint: Int, sCutHint: Int = 0, partitionHistogram: Option[Map[Int, Double]] = None)(implicit tag: ClassTag[T]): PartitioningInfo[T] = {
-    require(numPartitions > 0, "Where's my number of partitions, I can not call you maybe!")
+  def apply[T](
+                globalHistogram: Seq[(T, Double)],
+                numPartitions: Int,
+                treeDepthHint: Int,
+                sCutHint: Int = 0,
+                partitionHistogram: Option[Map[Int, Double]] = None)(
+    implicit tag: ClassTag[T]): PartitioningInfo[T] = {
+    require(numPartitions > 0, s"Number of partitions ($numPartitions) should be positive.")
 
     val sortedValues = globalHistogram.map(_._2).toArray.take(numPartitions)
     val pCutHint = Math.pow(2, treeDepthHint - 1).toInt
@@ -63,6 +68,6 @@ object PartitioningInfo {
       */
     val level = Math.max(0, (1.0d - sortedValues.take(actualSCut).sum) / (numPartitions - actualSCut))
     val actualCut = actualSCut + actualPCut
-    PartitioningInfo[T](numPartitions, actualCut, actualSCut, level, globalHistogram, partitionHistogram)
+    new PartitioningInfo[T](numPartitions, actualCut, actualSCut, level, globalHistogram, partitionHistogram)
   }
 }

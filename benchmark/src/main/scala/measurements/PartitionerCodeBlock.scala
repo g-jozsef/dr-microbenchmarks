@@ -54,13 +54,13 @@ abstract class PartitionerCodeBlock[T](
         // calculate the partitioning histogram for the current batch
         partitionHistogram = getPartitionHistogram(partitioner, keyHistogram)
         // calculate the corresponding partitioning info
-        partitioningInfo = PartitioningInfo.newInstance[T](keyHistogram, numPartitions, treeDepthHint, partitionHistogram = Some(partitionHistogram))
+        partitioningInfo = PartitioningInfo[T](keyHistogram, numPartitions, treeDepthHint, partitionHistogram = Some(partitionHistogram))
 
       // in case of partitioners other than Mixed, we don't need to calculate the
       // partitioning histogram
       case _ =>
         // calculate the corresponding partitioning info
-        partitioningInfo = PartitioningInfo.newInstance[T](keyHistogram.take(keyExcess * numPartitions + 1), numPartitions, treeDepthHint)
+        partitioningInfo = PartitioningInfo[T](keyHistogram.take(keyExcess * numPartitions + 1), numPartitions, treeDepthHint)
     }
   }
 
