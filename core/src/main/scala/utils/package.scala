@@ -4,4 +4,8 @@ package object utils {
       f()
     b
   }
+
+  def pretty[A](padTo: Int, trav: Traversable[A]): String = {
+    trav.map(x => x.toString.padTo(padTo, ' ')).mkString(", ")
+  }
 }

@@ -41,6 +41,9 @@ object ValueGenerator {
 
     // generate random string as key, but with control over the seed
     def transformKey(k: Int, seed: Int): K
+
+    // transforms key to type K with a postfix
+    def transformKey(k: Int, postfix: String): K
   }
 
   /**
@@ -53,5 +56,8 @@ object ValueGenerator {
 
     // generate random string as key, but with control over the seed
     override def transformKey(k: Int, seed: Int): String = StringGenerator.generateString2(k, seed)
+
+    override def transformKey(k: Int, postfix: String): String = transformKey(k) + "_" + postfix
   }
+
 }

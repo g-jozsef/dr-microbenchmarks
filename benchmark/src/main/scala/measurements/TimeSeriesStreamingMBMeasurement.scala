@@ -8,6 +8,7 @@ import partitioner.GedikPartitioner.GedikPartitioner
 import partitioner.Partitioner.PartitionerType
 import partitioner.Partitioner.PartitionerType.PartitionerType
 import partitioner.{ConsistentHashPartitioner, HashPartitioner, KeyIsolatorPartitioner, MixedPartitioner, Partitioner, PartitioningInfo, Updateable}
+import utils.ValueGenerator.StringKeyedRecordGenerator
 import utils._
 
 import scala.io.Source
@@ -61,6 +62,8 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
   override def getOptions: Map[String, (Symbol, String => Any)] = options
 
   type KeyType = String
+
+  private val stringKeyedRecordGenerator = new StringKeyedRecordGenerator()
 
   def main(args: Array[String]): Unit = {
     readOptions(args)
@@ -145,7 +148,7 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
 
     for (_ <- 1 to iterations) {
       // generate new random keys for each iteration
-      val keyMapping = allKeys.zip(generateKeys(allKeys.size)).toMap
+      val keyMapping = allKeys.zip(allKeys.indices.map(k => stringKeyedRecordGenerator.transformKey(k, k.toString)).toArray[KeyType]).toMap
       // partitioner for the previous batch
       var partitioner1: Partitioner[KeyType] = null
       // partitioner for the current batch
@@ -213,14 +216,6 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
     records.groupBy(identity).mapValues(_.size).values.toArray.sortBy(-_)
       .map(f => f.toDouble / records.size)
   }
-
-  // generate an array of random string keys (with sequential indices attached to the end)
-  def generateKeys(numKeys: Int): Array[KeyType] = {
-    (0 until numKeys).map(k => transformKey(k, k)).toArray
-  }
-
-  // generate a random string key with the seed attached to the end
-  def transformKey(k: Int, seed: Int): String = StringGenerator.generateRandomString(k) + seed.toString
 
   // calculate migration cost on a partitioner update assuming linear state
   def measureExactMigrationCost(
