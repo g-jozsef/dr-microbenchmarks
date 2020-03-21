@@ -3,7 +3,7 @@ import scala.io.Source
 
 name := "dr-microbenchmarks"
 
-scalaVersion := "2.12.10"
+scalaVersion := scalaLanguageVersion
 
 lazy val commonSettings = Seq(
 	version := {
