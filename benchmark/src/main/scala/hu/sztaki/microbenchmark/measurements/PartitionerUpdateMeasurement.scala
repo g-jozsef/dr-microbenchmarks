@@ -1,10 +1,10 @@
-package measurements
+package hu.sztaki.microbenchmark.measurements
 
-import partitioner.Partitioner.PartitionerType
-import partitioner.Partitioner.PartitionerType.PartitionerType
-import partitioner.Updateable
-import utils.ValueGenerator.StringKeyedRecordGenerator
-import utils._
+import hu.sztaki.microbenchmark.utils.{CodeBlock, Distribution, Mean, MicroBenchmarkUtil}
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.Updateable
+import hu.sztaki.microbenchmark.utils.ValueGenerator.StringKeyedRecordGenerator
 
 import scala.util.Random
 

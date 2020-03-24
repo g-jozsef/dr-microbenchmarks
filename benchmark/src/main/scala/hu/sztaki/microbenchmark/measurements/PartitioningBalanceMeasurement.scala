@@ -1,10 +1,11 @@
-package measurements
+package hu.sztaki.microbenchmark.measurements
 
-import partitioner.Partitioner.PartitionerType
-import partitioner.Partitioner.PartitionerType.PartitionerType
-import partitioner._
-import utils.ValueGenerator.{KeyedRecordGenerator, StringKeyedRecordGenerator, ValueTuple}
-import utils._
+import hu.sztaki.microbenchmark.partitioner.{ConsistentHashPartitioner, KeyIsolatorPartitioner, Partitioner, Updateable}
+import hu.sztaki.microbenchmark.utils.{Distribution, Mean}
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType.PartitionerType
+import hu.sztaki.microbenchmark.utils.ValueGenerator.{KeyedRecordGenerator, StringKeyedRecordGenerator, ValueTuple}
+import hu.sztaki.microbenchmark.utils.pretty
 
 import scala.reflect.ClassTag
 

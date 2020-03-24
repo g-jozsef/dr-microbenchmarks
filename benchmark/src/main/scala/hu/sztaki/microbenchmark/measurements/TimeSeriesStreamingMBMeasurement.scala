@@ -1,15 +1,15 @@
-package measurements
+package hu.sztaki.microbenchmark.measurements
 
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 
 import com.google.common.hash.Hashing
-import partitioner.GedikPartitioner.GedikPartitioner
-import partitioner.Partitioner.PartitionerType
-import partitioner.Partitioner.PartitionerType.PartitionerType
-import partitioner.{ConsistentHashPartitioner, HashPartitioner, KeyIsolatorPartitioner, MixedPartitioner, Partitioner, PartitioningInfo, Updateable}
-import utils.ValueGenerator.StringKeyedRecordGenerator
-import utils._
+import hu.sztaki.microbenchmark.partitioner
+import hu.sztaki.microbenchmark.partitioner.GedikPartitioner.GedikPartitioner
+import hu.sztaki.microbenchmark.partitioner.{HashPartitioner, Partitioner, PartitioningInfo, Updateable}
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType.PartitionerType
+import hu.sztaki.microbenchmark.utils.ValueGenerator.StringKeyedRecordGenerator
 
 import scala.io.Source
 
@@ -97,6 +97,7 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
       .filter(_ != "-1").take(batchSize * numBatches)
       .grouped(batchSize)
       .map(group => group.take(sampleSize)).toSeq
+        .toArray
 
     inputSource.close()
 
@@ -172,7 +173,7 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
           case PartitionerType.Mixed =>
             // for Mixed partitioner, a partition histogram is needed
             var retentivePartitionHistogram = (0 until numPartitions).map(p => p -> 0.0d).toMap
-            val partit = if (i == 0) Updateable[KeyType](partitionerType, numPartitions, keyExcess, thetaMax) else partitioner2
+            val partit = if (i == 0) partitioner.Updateable[KeyType](partitionerType, numPartitions, keyExcess, thetaMax) else partitioner2
             keys.foreach(k => {
               val part = partit.getPartition(k)
               retentivePartitionHistogram = retentivePartitionHistogram + (part -> (retentivePartitionHistogram(part) + retentiveKeyHistogramMap(k)))
@@ -189,7 +190,7 @@ object TimeSeriesStreamingMBMeasurement extends PartitionerBenchmarkOptionHandle
         partitioner2 = partitioner2 match {
           case p: Updateable[KeyType] =>
             p.update(partitioningInfo).asInstanceOf[Partitioner[KeyType]]
-          case _ => Updateable(partitionerType, numPartitions, keyExcess, thetaMax).update(partitioningInfo).asInstanceOf[Partitioner[KeyType]]
+          case _ => partitioner.Updateable(partitionerType, numPartitions, keyExcess, thetaMax).update(partitioningInfo).asInstanceOf[Partitioner[KeyType]]
         }
 
         // measure partitioning balance and migration cost with linear and constant state

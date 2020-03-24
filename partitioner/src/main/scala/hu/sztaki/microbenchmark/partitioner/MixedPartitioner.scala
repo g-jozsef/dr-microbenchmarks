@@ -1,7 +1,7 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import MixedPartitioner._
-import utils.AdvancedBinarySearch.binarySearch
+import hu.sztaki.microbenchmark.utils.AdvancedBinarySearch.binarySearch
 
 class MixedPartitioner[T](
   override val numPartitions: Int,

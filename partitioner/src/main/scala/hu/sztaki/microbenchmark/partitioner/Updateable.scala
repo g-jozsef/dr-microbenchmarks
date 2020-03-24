@@ -1,11 +1,11 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import java.nio.ByteBuffer
 
 import com.google.common.hash.Hashing
-import partitioner.GedikPartitioner.GedikPartitioner
-import partitioner.Partitioner.PartitionerType
-import partitioner.Partitioner.PartitionerType.PartitionerType
+import GedikPartitioner.GedikPartitioner
+import Partitioner.PartitionerType
+import Partitioner.PartitionerType.PartitionerType
 
 /**
   * An updateable partitioner.

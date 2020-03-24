@@ -1,11 +1,12 @@
-package measurements
+package hu.sztaki.microbenchmark.measurements
 
-import measurements.PartitionerUpdateMeasurement.getPartitionHistogram
-import partitioner.Partitioner.PartitionerType
-import partitioner.Partitioner.PartitionerType.PartitionerType
-import partitioner.{PartitioningInfo, Updateable}
-import utils.ValueGenerator.{KeyedRecordGenerator, ValueTuple}
-import utils.{CodeBlock, Distribution}
+import PartitionerUpdateMeasurement.getPartitionHistogram
+import hu.sztaki.microbenchmark
+import hu.sztaki.microbenchmark.utils.{CodeBlock, Distribution}
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType.PartitionerType
+import hu.sztaki.microbenchmark.partitioner.{PartitioningInfo, Updateable}
+import hu.sztaki.microbenchmark.utils.ValueGenerator.{KeyedRecordGenerator, ValueTuple}
 
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -36,7 +37,7 @@ abstract class PartitionerCodeBlock[T](
   def initPartitiner(): Unit = {
     // if a new iteration of the measurement has started, reinitialize the partitioner
     if (i % numBatches == 0) {
-      partitioner = Updateable[T](partitionerType, numPartitions, keyExcess, thetaMax)
+      partitioner = microbenchmark.partitioner.Updateable[T](partitionerType, numPartitions, keyExcess, thetaMax)
       // generate a new set of keys with transformKey
       keys = (1 to numKeys).map(k => keyedRecordGenerator.transformKey(k, Random.nextInt)).toArray
     }

@@ -1,7 +1,8 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
-import partitioner.GedikPartitioner.GedikPartitioner
-import partitioner.Partitioner.PartitionerType.PartitionerType
+import hu.sztaki.microbenchmark.partitioner
+import hu.sztaki.microbenchmark.partitioner.GedikPartitioner.GedikPartitioner
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType.PartitionerType
 
 import scala.reflect.ClassTag
 
@@ -23,7 +24,7 @@ object Partitioner {
       case PartitionerType.Hash =>
         new HashPartitioner(numPartitions)
       case other =>
-        Updateable(other, numPartitions, keyExcess, thetaMax)
+        partitioner.Updateable(other, numPartitions, keyExcess, thetaMax)
     }
   }
 

@@ -1,4 +1,4 @@
-package utils
+package hu.sztaki.microbenchmark.utils
 
 trait OptionHandler {
   type OptionMap = Map[Symbol, Any]

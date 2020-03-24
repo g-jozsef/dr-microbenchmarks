@@ -1,8 +1,8 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import scala.annotation.tailrec
+import hu.sztaki.microbenchmark.utils.computeIf
 import scala.reflect.ClassTag
-import utils.computeIf
 
 /**
   * Informations required to construct the partitioner

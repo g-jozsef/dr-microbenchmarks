@@ -1,4 +1,4 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import scala.collection.mutable
 

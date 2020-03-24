@@ -1,4 +1,4 @@
-package utils
+package hu.sztaki.microbenchmark.utils
 
 import scala.util.Random
 import scala.util.hashing.MurmurHash3

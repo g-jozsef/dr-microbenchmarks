@@ -1,9 +1,9 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import com.google.common.collect.TreeMultiset
-import utils.SortedTree
-import scala.collection.JavaConversions._
+import hu.sztaki.microbenchmark.utils.SortedTree
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 object GedikPartitioner2 {

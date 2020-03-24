@@ -1,3 +1,5 @@
+package hu.sztaki.microbenchmark
+
 package object utils {
   def computeIf(b: Boolean, f: () => Unit): Boolean = {
     if (b)
@@ -8,4 +10,5 @@ package object utils {
   def pretty[A](padTo: Int, trav: Traversable[A]): String = {
     trav.map(x => x.toString.padTo(padTo, ' ')).mkString(", ")
   }
+
 }

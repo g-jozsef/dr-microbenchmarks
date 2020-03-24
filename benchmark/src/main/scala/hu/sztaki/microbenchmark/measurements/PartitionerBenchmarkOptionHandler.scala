@@ -1,7 +1,7 @@
-package measurements
+package hu.sztaki.microbenchmark.measurements
 
-import partitioner.Partitioner.PartitionerType
-import utils.OptionHandler
+import hu.sztaki.microbenchmark.partitioner.Partitioner.PartitionerType
+import hu.sztaki.microbenchmark.utils.OptionHandler
 
 trait PartitionerBenchmarkOptionHandler extends OptionHandler {
 

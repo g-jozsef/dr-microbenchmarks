@@ -1,16 +1,18 @@
 import Dependencies._
 import scala.io.Source
 
-name := "dr-microbenchmarks"
+name := "microbenchmark"
 
 scalaVersion := "2.12.10"
 
 lazy val commonSettings = Seq(
+	organizationName := "SZTAKI",
+	organization := "hu.sztaki",
 	version := {
 		val vSource = Source.fromFile("version", "UTF-8")
 		val v = vSource.mkString
 		vSource.close()
-		if (!v.matches("""^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$""")) {
+		if (!v.matches("""^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(-SNAPSHOT)?$""")) {
 			throw new RuntimeException("Invalid version format!")
 		}
 		v
@@ -21,6 +23,9 @@ lazy val commonSettings = Seq(
 	fork in Test := true,
 	baseDirectory in Test := (baseDirectory in ThisBuild).value,
 	test in assembly := {},
+	publishTo := Some("Artifactory Realm" at "https://artifactory.enliven.systems/artifactory/sbt-dev-local/"),
+	credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
+	publishArtifact in (Test, packageBin) := true,
 )
 
 

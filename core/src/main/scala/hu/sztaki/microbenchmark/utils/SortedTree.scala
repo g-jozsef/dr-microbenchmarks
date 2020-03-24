@@ -1,4 +1,4 @@
-package utils
+package hu.sztaki.microbenchmark.utils
 
 import scala.collection.immutable.TreeMap
 

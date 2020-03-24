@@ -1,4 +1,4 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 /**
   * Capability of a partitioner to estimate its migration cost

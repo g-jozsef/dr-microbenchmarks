@@ -1,7 +1,7 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 import com.google.common.collect.TreeMultiset
-import utils.{Distribution, SortedTree}
+import hu.sztaki.microbenchmark.utils.{Distribution, SortedTree}
 
 import scala.collection.JavaConverters.mapAsJavaMap
 import scala.collection.immutable.{HashMap, TreeMap}
