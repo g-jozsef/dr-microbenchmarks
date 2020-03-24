@@ -16,13 +16,15 @@ object Partitioner {
 
   object PartitionerType extends Enumeration {
     type PartitionerType = Value
-    val Scan, Redist, Readj, KeyIsolator, Mixed, Hash = Value
+    val Scan, Redist, Readj, KeyIsolator, Mixed, Hash, RoundRobin = Value
   }
 
   def apply[T](pType: PartitionerType, numPartitions: Int, keyExcess: Int, thetaMax: Double): Partitioner[T] = {
     pType match {
       case PartitionerType.Hash =>
         new HashPartitioner(numPartitions)
+      case PartitionerType.RoundRobin =>
+        new RoundRobinPartitioner[T](numPartitions)
       case other =>
         partitioner.Updateable(other, numPartitions, keyExcess, thetaMax)
     }

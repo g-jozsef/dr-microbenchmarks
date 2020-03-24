@@ -3,7 +3,7 @@ import scala.io.Source
 
 name := "microbenchmark"
 
-scalaVersion := "2.12.10"
+scalaVersion := scalaLanguageVersion
 
 lazy val commonSettings = Seq(
 	organizationName := "SZTAKI",
