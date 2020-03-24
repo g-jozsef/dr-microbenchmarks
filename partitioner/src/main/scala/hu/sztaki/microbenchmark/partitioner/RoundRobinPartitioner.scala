@@ -1,4 +1,4 @@
-package partitioner
+package hu.sztaki.microbenchmark.partitioner
 
 class RoundRobinPartitioner[T](override val numPartitions: Int) extends Partitioner[T] {
   require(numPartitions > 0, s"Number of partitions ($numPartitions) should be positive.")
